@@ -7,6 +7,7 @@ namespace ICPDAS_Manager
     /// </summary>
     public class IcpDasPdsData
     {
+        #region Telnet
         #region Read Only
         [IcpDasCommand(Command = "VER", CanRead = true)]
         public string? FirmwareVersion { get; set; }
@@ -18,7 +19,7 @@ namespace ICPDAS_Manager
         public string? IpFilter { get; set; }
 
         [IcpDasCommand(Command = "SOCKET", CanRead = true)]
-        public string? Socket { get; set; } 
+        public string? Socket { get; set; }
         #endregion
 
         #region Read / Write
@@ -76,7 +77,16 @@ namespace ICPDAS_Manager
         public string? EndChar { get; set; }
 
         [IcpDasCommand(Command = "EchoCmdNo", CanRead = true, CanWrite = true)]
-        public string? EchoCmdNo { get; set; } 
+        public string? EchoCmdNo { get; set; }
+        #endregion
+        #endregion
+
+        #region Http
+        public int GatewayModbusID { get; set; }
+
+        public int ModbusPort { get; set; }
+
+        public ModbusComPort[] ModbusComPort { get; set; }
         #endregion
     }
 }

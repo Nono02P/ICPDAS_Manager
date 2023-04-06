@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using Dna;
 
 namespace ICPDAS_Manager
 {
@@ -6,8 +7,8 @@ namespace ICPDAS_Manager
     {
         static void Main(string[] args)
         {
-            //Read("Configuration.json", "192.168.1.51");
-            Write("Configuration.json", "192.168.1.51");
+            Read("Configuration.json", "192.168.1.51");
+            //Write("Configuration.json", "192.168.1.51");
             Console.WriteLine("End");
         }
 
@@ -24,10 +25,10 @@ namespace ICPDAS_Manager
                 string jsonString = JsonSerializer.Serialize(config, options);
                 File.WriteAllText(fileName, jsonString);
             }
-            catch (Exception ex)
+            /*catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-            }
+            }*/
             finally
             {
                 pdsConnection.Dispose();

@@ -1,5 +1,9 @@
 ﻿using System.Reflection;
+using System.Linq;
 using Telnet;
+using Dna;
+using System.Net;
+using System.Text.RegularExpressions;
 
 namespace ICPDAS_Manager
 {
@@ -37,7 +41,72 @@ namespace ICPDAS_Manager
                     }
                 }
             }
+            InsertHttpData(result);
             return result;
+        }
+
+        private void InsertHttpData(IcpDasPdsData data)
+        {
+            HttpWebResponse response = WebRequests.GetAsync($"http://{_hostname}/modbus_M.cgi?ID=25623").Result;
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                Stream stream = response.GetResponseStream();
+                string body = new StreamReader(stream).ReadToEnd();
+
+                string pattern = @"Gateway ID=(?<id>\d)";
+                Group? g = Regex.Match(body, pattern).Groups.AsQueryable<Group>().FirstOrDefault(m => m.Name == "id");
+                if (g != null)
+                {
+                    data.GatewayModbusID = int.Parse(g.Value);
+                }
+
+                pattern = @"<br>TCP\/UDP port=(?<port>[^<]*)";
+                g = Regex.Match(body, pattern).Groups.AsQueryable<Group>().FirstOrDefault(m => m.Name == "port");
+                if (g != null)
+                {
+                    data.ModbusPort = int.Parse(g.Value);
+                }
+
+                pattern = @"<td>(?<complete>COM (?<com>\d): #ID=(?<nbID>[^:]*)[^<]*)";
+                MatchCollection matchs = Regex.Matches(body, pattern, RegexOptions.Multiline);
+                data.ModbusComPort = new ModbusComPort[matchs.Count];
+                for (int i = 0; i < matchs.Count; i++)
+                {
+                    Match m = matchs[i];
+                    IQueryable<Group> groups = m.Groups.AsQueryable<Group>();
+                    string? comPortConfig = groups.FirstOrDefault(gr => gr.Name == "complete").Value;
+                    if (comPortConfig != null)
+                    {
+                        string subpattern = @"timeout=(?<timeout>\d*) ms, type=(?<type>\w*), ID offset=(?<IdOffset>-?\d*)";
+                        IQueryable<Group> subGroups = Regex.Match(comPortConfig, subpattern).Groups.AsQueryable<Group>();
+                        ModbusComPort modbusComPort = new ModbusComPort()
+                        {
+                            ComPortId = int.Parse(groups.FirstOrDefault(gr => gr.Name == "com").Value),
+                            NbOfId = int.Parse(groups.FirstOrDefault(gr => gr.Name == "nbID").Value)
+                        };
+                        if (int.TryParse(subGroups.FirstOrDefault(gr => gr.Name == "timeout")?.Value, out int timeout))
+                        {
+                            modbusComPort.TimeOut = timeout;
+                        }
+                        if (int.TryParse(subGroups.FirstOrDefault(gr => gr.Name == "IdOffset")?.Value, out int idOffset))
+                        {
+                            modbusComPort.IdOffset = idOffset;
+                        }
+                        switch (subGroups.FirstOrDefault(gr => gr.Name == "type")?.Value)
+                        {
+                            case "ASCII":
+                                modbusComPort.ModbusType = eModbusType.ASCII;
+                                break;
+                            case "RTU":
+                                modbusComPort.ModbusType = eModbusType.RTU;
+                                break;
+                            default:
+                                break;
+                        }
+                        data.ModbusComPort[i] = modbusComPort;
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -80,10 +149,6 @@ namespace ICPDAS_Manager
             if (restart)
             {
                 _telnetTerminal.Write("RESET");
-                if (config.Ip.Split("=")[1] != _hostname)
-                {
-                    
-                }
             }
         }
 

@@ -62,7 +62,7 @@ namespace Telnet
             string[] lines = sb.ToString().Split("\r\n");
             string lastLine = lines[lines.Length - 1];
             int length = sb.Length;
-            if (lastLine.Substring(lastLine.Length - 1) == ">")
+            if (lastLine.Length > 0 && lastLine.Substring(lastLine.Length - 1) == ">")
             {
                 length -= lastLine.Length;
             }
