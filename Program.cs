@@ -1,5 +1,4 @@
 ﻿using System.Text.Json;
-using Dna;
 
 namespace ICPDAS_Manager
 {
@@ -7,9 +6,12 @@ namespace ICPDAS_Manager
     {
         static void Main(string[] args)
         {
-            Read("Configuration.json", "192.168.1.51");
-            //Write("Configuration.json", "192.168.1.51");
-            Console.WriteLine("End");
+            Task.Run(() =>
+            {
+                //Read("Configuration.json", "192.168.1.51");
+                Write("Configuration.json", "192.168.1.51");
+                Console.WriteLine("End");
+            }).Wait();
         }
 
         static void Read(string fileName, string hostname)

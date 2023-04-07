@@ -1,7 +1,7 @@
 ﻿namespace ICPDAS_Manager
 {
     [AttributeUsage(AttributeTargets.Property)]
-    public class IcpDasCommandAttribute : Attribute
+    public class IcpDasTelnetCommandAttribute : Attribute
     {
         public string Command { get; set; }
         public bool CanRead { get; set; }

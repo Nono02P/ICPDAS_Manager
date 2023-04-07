@@ -9,22 +9,22 @@ namespace ICPDAS_Manager
     {
         #region Telnet
         #region Read Only
-        [IcpDasCommand(Command = "VER", CanRead = true)]
+        [IcpDasTelnetCommand(Command = "VER", CanRead = true)]
         public string? FirmwareVersion { get; set; }
 
-        [IcpDasCommand(Command = "MAC", CanRead = true)]
+        [IcpDasTelnetCommand(Command = "MAC", CanRead = true)]
         public string? Mac { get; set; }
 
-        [IcpDasCommand(Command = "IPFILTER", CanRead = true)]
+        [IcpDasTelnetCommand(Command = "IPFILTER", CanRead = true)]
         public string? IpFilter { get; set; }
 
-        [IcpDasCommand(Command = "SOCKET", CanRead = true)]
+        [IcpDasTelnetCommand(Command = "SOCKET", CanRead = true)]
         public string? Socket { get; set; }
         #endregion
 
         #region Read / Write
         private string? _comPorts;
-        [IcpDasCommand(Command = "COM", CanRead = true, CanWrite = true, HasToSplitByLine = true)]
+        [IcpDasTelnetCommand(Command = "COM", CanRead = true, CanWrite = true, HasToSplitByLine = true)]
         public string? ComPorts
         {
             get { return _comPorts; }
@@ -40,53 +40,55 @@ namespace ICPDAS_Manager
             }
         }
 
-        [IcpDasCommand(Command = "NAME", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "NAME", CanRead = true, CanWrite = true)]
         public string? Name { get; set; }
 
-        [IcpDasCommand(Command = "ALIAS", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "ALIAS", CanRead = true, CanWrite = true)]
         public string? Alias { get; set; }
 
-        [IcpDasCommand(Command = "IP", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "IP", CanRead = true, CanWrite = true)]
         public string? Ip { get; set; }
 
-        [IcpDasCommand(Command = "MASK", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "MASK", CanRead = true, CanWrite = true)]
         public string? Mask { get; set; }
 
-        [IcpDasCommand(Command = "GATEWAY", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "GATEWAY", CanRead = true, CanWrite = true)]
         public string? Gateway { get; set; }
 
-        [IcpDasCommand(Command = "DHCP", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "DHCP", CanRead = true, CanWrite = true)]
         public string? Dhcp { get; set; }
 
-        [IcpDasCommand(Command = "M", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "M", CanRead = true, CanWrite = true)]
         public string? EchoMode { get; set; }
 
-        [IcpDasCommand(Command = "UDP", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "UDP", CanRead = true, CanWrite = true)]
         public string? UdpSearch { get; set; }
 
-        [IcpDasCommand(Command = "Broadcast", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "Broadcast", CanRead = true, CanWrite = true)]
         public string? Broadcast { get; set; }
 
-        [IcpDasCommand(Command = "SystemTimeout", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "SystemTimeout", CanRead = true, CanWrite = true)]
         public string? SystemTimeout { get; set; }
 
-        [IcpDasCommand(Command = "SocketTimeout", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "SocketTimeout", CanRead = true, CanWrite = true)]
         public string? SocketTimeout { get; set; }
 
-        [IcpDasCommand(Command = "EndChar", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "EndChar", CanRead = true, CanWrite = true)]
         public string? EndChar { get; set; }
 
-        [IcpDasCommand(Command = "EchoCmdNo", CanRead = true, CanWrite = true)]
+        [IcpDasTelnetCommand(Command = "EchoCmdNo", CanRead = true, CanWrite = true)]
         public string? EchoCmdNo { get; set; }
         #endregion
         #endregion
 
         #region Http
+        [IcpDasHttpCommand(Key = "MID")]
         public int GatewayModbusID { get; set; }
 
+        [IcpDasHttpCommand(Key = "M_PORT")]
         public int ModbusPort { get; set; }
 
-        public ModbusComPort[] ModbusComPort { get; set; }
+        public ModbusComPortData[] ModbusComPort { get; set; }
         #endregion
     }
 }
