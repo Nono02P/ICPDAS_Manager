@@ -8,8 +8,8 @@ namespace ICPDAS_Manager
         {
             Task.Run(() =>
             {
-                //Read("Configuration.json", "192.168.1.51");
-                Write("Configuration.json", "192.168.1.51");
+                Read("Configuration.json", "192.168.1.51");
+                //Write("Configuration.json", "192.168.1.51");
                 Console.WriteLine("End");
             }).Wait();
         }

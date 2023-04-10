@@ -1,12 +1,8 @@
-﻿using System.Reflection;
-using System.Linq;
-using Telnet;
-using Dna;
-using System.Net;
-using System.Text.RegularExpressions;
+﻿using System.Net;
+using System.Reflection;
 using System.Text;
-using Newtonsoft.Json;
-using System.Xml.Serialization;
+using System.Text.RegularExpressions;
+using Telnet;
 
 namespace ICPDAS_Manager
 {
@@ -91,67 +87,72 @@ namespace ICPDAS_Manager
             {
                 Stream stream = response.GetResponseStream();
                 string body = new StreamReader(stream).ReadToEnd();
+                TypeConverterFactory factory = new TypeConverterFactory();
 
-                string pattern = @"Gateway ID=(?<id>\d)";
-                Group? g = Regex.Match(body, pattern).Groups.AsQueryable<Group>().FirstOrDefault(m => m.Name == "id");
-                if (g != null)
-                {
-                    data.GatewayModbusID = int.Parse(g.Value);
-                }
+                string pattern = @"Gateway ID=(?<gId>\d).*<br>TCP\/UDP port=(?<gPort>[^<]*)";
+                IQueryable<Group> groups = Regex.Match(body, pattern).Groups.AsQueryable<Group>();
+                PropertyInfo[] properties = typeof(IcpDasPdsData).GetProperties();
+                InsertPropertyData(data, groups, properties, factory);
 
-                pattern = @"<br>TCP\/UDP port=(?<port>[^<]*)";
-                g = Regex.Match(body, pattern).Groups.AsQueryable<Group>().FirstOrDefault(m => m.Name == "port");
-                if (g != null)
-                {
-                    data.ModbusPort = int.Parse(g.Value);
-                }
+                pattern = @"COM\s(?P<COM>\d+):\s#ID=(?P<NBID>(?!0)\d+):\S+=(?P<Range1>\d+)(\S+)~(?P<Range2>\d+)(\S+),\stimeout=(?P<timeout>\d+)\sms,\stype=(?P<type>\w+),\sID\s*offset=(?P<offset>-?\d+)|COM\s(?P<COM2>\d+):\s#ID=(?P<NBID2>0):Disable";
+                // <td>         # Matche la balise de début de cellule ""<td>""
+                // (COM\s\d)    # Matche la chaîne ""COM"" suivie d'un espace et un ou plusieurs chiffres. Le numéro de port est capturé dans un groupe de capture.
+                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
+                // ID=(\d+)     # Matche la chaîne ""ID="" suivi d'un ou plusieurs chiffres. L'identifiant est capturé dans un groupe de capture.
+                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
+                // timeout=(\d+)   # Matche la chaîne ""timeout="" suivie d'un ou plusieurs chiffres. Le temps d'attente est capturé dans un groupe de capture.
+                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
+                // type=(\S+)  # Matche la chaîne ""type="" suivie d'un ou plusieurs caractères non-blancs. Le type est capturé dans un groupe de capture.
+                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
+                // offset=(-?\d+)  # Matche la chaîne ""offset="" suivie d'un ou plusieurs chiffres, éventuellement précédé d'un signe ""-"". L'offset est capturé dans un groupe de capture.
+                // .*?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
+                // (?:</td>|$)  # Matche soit la balise de fin de cellule ""</td>"", soit la fin de la chaîne ""$"". Le ""?"" dans le groupe de capture signifie que cette partie est optionnelle.
 
-                pattern = @"<td>(?<complete>COM (?<com>\d): #ID=(?<nbID>[^:]*)[^<]*)";
                 MatchCollection matchs = Regex.Matches(body, pattern, RegexOptions.Multiline);
                 data.ModbusComPort = new ModbusComPortData[matchs.Count];
                 for (int i = 0; i < matchs.Count; i++)
                 {
-                    Match m = matchs[i];
-                    IQueryable<Group> groups = m.Groups.AsQueryable<Group>();
-                    string? comPortConfig = groups?.FirstOrDefault(gr => gr.Name == "complete")?.Value;
-                    if (comPortConfig != null)
-                    {
-                        string subpattern = @"timeout=(?<timeout>\d*) ms, type=(?<type>\w*), ID offset=(?<IdOffset>-?\d*)";
-                        IQueryable<Group> subGroups = Regex.Match(comPortConfig, subpattern).Groups.AsQueryable<Group>();
-                        ModbusComPortData modbusComPort = new ModbusComPortData();
-                        if (int.TryParse(subGroups.FirstOrDefault(gr => gr.Name == "com")?.Value, out int comPortId))
-                        {
-                            modbusComPort.ComPortId = comPortId;
-                        }
-                        if (int.TryParse(subGroups.FirstOrDefault(gr => gr.Name == "nbID")?.Value, out int nbID))
-                        {
-                            modbusComPort.NbOfId = nbID;
-                        }
-                        if (int.TryParse(subGroups.FirstOrDefault(gr => gr.Name == "timeout")?.Value, out int timeout))
-                        {
-                            modbusComPort.TimeOut = timeout;
-                        }
-                        if (int.TryParse(subGroups.FirstOrDefault(gr => gr.Name == "IdOffset")?.Value, out int idOffset))
-                        {
-                            modbusComPort.IdOffset = idOffset;
-                        }
-                        switch (subGroups.FirstOrDefault(gr => gr.Name == "type")?.Value)
-                        {
-                            case "ASCII":
-                                modbusComPort.ModbusType = eModbusType.ASCII;
-                                break;
-                            case "RTU":
-                                modbusComPort.ModbusType = eModbusType.RTU;
-                                break;
-                            default:
-                                break;
-                        }
-                        data.ModbusComPort[i] = modbusComPort;
-                    }
+                    data.ModbusComPort[i] = GetModbusComPortData(matchs[i], factory);
                 }
             }
         }
-        #endregion 
+
+        /// <summary>
+        /// Insert the Modbus com port data from a regex match containing the data.
+        /// </summary>
+        /// <param name="data">The data class that should be populate with the extracted data from the regex match.</param>
+        /// <param name="match">The regex match contening the data.</param>
+        private ModbusComPortData GetModbusComPortData(Match match, TypeConverterFactory factory)
+        {
+            ModbusComPortData data = new ModbusComPortData();
+            IQueryable<Group> groups = match.Groups.AsQueryable<Group>();
+            PropertyInfo[] properties = typeof(ModbusComPortData).GetProperties();
+            InsertPropertyData(data, groups, properties, factory);
+            return data;
+        }
+
+        /// <summary>
+        /// For each properties, get the value from the regex groups and write the value in data object.
+        /// </summary>
+        /// <param name="data">The object to be written.</param>
+        /// <param name="groups">The Regex groups (with names) containing the data.</param>
+        /// <param name="properties">The properties of data class to be checked.</param>
+        /// <param name="factory">A factory to convert a string from the regex extraction.</param>
+        private void InsertPropertyData(object data, IQueryable<Group> groups, PropertyInfo[] properties, TypeConverterFactory factory)
+        {
+            for (int i = 0; i < properties.Length; i++)
+            {
+                PropertyInfo p = properties[i];
+                IcpDasHttpCommandAttribute? a = p.GetCustomAttribute<IcpDasHttpCommandAttribute>();
+                if (a != null)
+                {
+                    ITypeConverter valueConverter = factory.GetInstance(a.Converter);
+                    object? value = valueConverter.Convert(groups.FirstOrDefault(g => g.Name.Substring(0, a.RegexID.Length) == a.RegexID)?.Value);
+                    p.SetValue(data, value);
+                }
+            }
+        }
+        #endregion
         #endregion
 
         #region Write configuration to device
@@ -226,19 +227,19 @@ namespace ICPDAS_Manager
 
                 key = GetHttpKeyCommand<IcpDasPdsData>(nameof(IcpDasPdsData.GatewayModbusID));
                 InsertKeyValue(sb, key, config.GatewayModbusID);
-                
+
                 key = GetHttpKeyCommand<ModbusComPortData>(nameof(ModbusComPortData.ComPortId));
                 InsertKeyValue(sb, key, modbusPort.ComPortId);
-                
+
                 key = GetHttpKeyCommand<ModbusComPortData>(nameof(ModbusComPortData.NbOfId));
                 InsertKeyValue(sb, key, modbusPort.NbOfId);
-                
+
                 key = GetHttpKeyCommand<ModbusComPortData>(nameof(ModbusComPortData.IdOffset));
                 InsertKeyValue(sb, key, modbusPort.IdOffset);
-                
+
                 key = GetHttpKeyCommand<ModbusComPortData>(nameof(ModbusComPortData.TimeOut));
                 InsertKeyValue(sb, key, modbusPort.TimeOut);
-                
+
                 key = GetHttpKeyCommand<ModbusComPortData>(nameof(ModbusComPortData.ModbusType));
                 InsertKeyValue(sb, key, (int)modbusPort.ModbusType);
 

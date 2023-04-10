@@ -82,10 +82,10 @@ namespace ICPDAS_Manager
         #endregion
 
         #region Http
-        [IcpDasHttpCommand(Key = "MID")]
+        [IcpDasHttpCommand(Key = "MID", RegexID = "gId")]
         public int GatewayModbusID { get; set; }
 
-        [IcpDasHttpCommand(Key = "M_PORT")]
+        [IcpDasHttpCommand(Key = "M_PORT", RegexID = "gPort")]
         public int ModbusPort { get; set; }
 
         public ModbusComPortData[] ModbusComPort { get; set; }

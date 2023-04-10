@@ -11,7 +11,7 @@ namespace ICPDAS_Manager
             request.Accept = accept;
             request.ContentType = contentType;
             request.Referer = referer;
-            
+
             using Stream requestStream = await request.GetRequestStreamAsync();
             using StreamWriter streamWriter = new StreamWriter(requestStream);
             await streamWriter.WriteAsync(content);
