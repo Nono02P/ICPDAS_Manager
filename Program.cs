@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Net.NetworkInformation;
+using System.Net;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace ICPDAS_Manager
@@ -50,13 +52,40 @@ namespace ICPDAS_Manager
             else
                 return;
 
+            bool accepted = false;
             string? ip;
             string ipPattern = @"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
             do
             {
                 Console.WriteLine("Please enter the gateway IP :");
                 ip = Console.ReadLine();
-            } while (ip == null || !Regex.IsMatch(ip, ipPattern));
+                if (ip == null || !Regex.IsMatch(ip, ipPattern))
+                {
+                    Console.WriteLine("Invalid IP!");
+                }
+                else
+                {
+                    PhysicalAddress r = GetMacAddress(IPAddress.Parse(ip));
+                    if (r.ToString().Substring(0, 6) == "000DE0")
+                    {
+                        accepted = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("The MAC address of the specified IP doesn't correspond to a ICP DAS Gateway!");
+                        Console.WriteLine();
+                        Console.WriteLine("Do you want to force and continue anyway? (Y/N)");
+                        if (Console.ReadKey().Key == ConsoleKey.Y)
+                        {
+                            Console.WriteLine();
+                            Console.WriteLine($"The file {fileName} will be probably wrong. Are you sure? (Y/N)");
+                            if (Console.ReadKey().Key == ConsoleKey.Y)
+                                accepted = true;
+                        }
+                        Console.WriteLine();
+                    }
+                }
+            } while (!accepted);
 
             Task.Run(() =>
             {
@@ -76,6 +105,17 @@ namespace ICPDAS_Manager
                         break;
                 }
             }).Wait();
+        }
+
+        [System.Runtime.InteropServices.DllImport("iphlpapi.dll", ExactSpelling = true)]
+        static extern int SendARP(int DestIP, int SrcIP, byte[] pMacAddr, ref int PhyAddrLen);
+        public static PhysicalAddress GetMacAddress(IPAddress ipAddress)
+        {
+            const int MacAddressLength = 6;
+            int length = MacAddressLength;
+            var macBytes = new byte[MacAddressLength];
+            SendARP(BitConverter.ToInt32(ipAddress.GetAddressBytes(), 0), 0, macBytes, ref length);
+            return new PhysicalAddress(macBytes);
         }
 
         static void Read(string fileName, string hostname)
