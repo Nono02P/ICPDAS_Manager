@@ -29,5 +29,24 @@ namespace ICPDAS_Manager
                 throw;
             }
         }
+
+        public static async Task<HttpWebResponse> GetAsync(string url, Action<HttpWebRequest> configureRequest = null)
+        {
+            HttpWebRequest request = WebRequest.CreateHttp(url);
+            request.Method = HttpMethod.Get.ToString();
+            configureRequest?.Invoke(request);
+            try
+            {
+                return (await request.GetResponseAsync()) as HttpWebResponse;
+            }
+            catch (WebException ex)
+            {
+                if (ex.Response is HttpWebResponse httpResponse)
+                {
+                    return httpResponse;
+                }
+                throw;
+            }
+        }
     }
 }

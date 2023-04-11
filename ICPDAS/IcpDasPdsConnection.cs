@@ -82,7 +82,7 @@ namespace ICPDAS_Manager
         /// <param name="data">The data class that should be populate with HTTP data.</param>
         private void InsertDataFromHttp(IcpDasPdsData data)
         {
-            HttpWebResponse response = Dna.WebRequests.GetAsync($"http://{_hostname}/modbus_M.cgi?ID=25623").Result;
+            HttpWebResponse response = WebRequests.GetAsync($"http://{_hostname}/modbus_M.cgi?ID=25623").Result;
             if (response.StatusCode == HttpStatusCode.OK)
             {
                 Stream stream = response.GetResponseStream();
@@ -94,21 +94,8 @@ namespace ICPDAS_Manager
                 PropertyInfo[] properties = typeof(IcpDasPdsData).GetProperties();
                 InsertPropertyData(data, groups, properties, factory);
 
-                pattern = @"COM\s(?P<COM>\d+):\s#ID=(?P<NBID>(?!0)\d+):\S+=(?P<Range1>\d+)(\S+)~(?P<Range2>\d+)(\S+),\stimeout=(?P<timeout>\d+)\sms,\stype=(?P<type>\w+),\sID\s*offset=(?P<offset>-?\d+)|COM\s(?P<COM2>\d+):\s#ID=(?P<NBID2>0):Disable";
-                // <td>         # Matche la balise de début de cellule ""<td>""
-                // (COM\s\d)    # Matche la chaîne ""COM"" suivie d'un espace et un ou plusieurs chiffres. Le numéro de port est capturé dans un groupe de capture.
-                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
-                // ID=(\d+)     # Matche la chaîne ""ID="" suivi d'un ou plusieurs chiffres. L'identifiant est capturé dans un groupe de capture.
-                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
-                // timeout=(\d+)   # Matche la chaîne ""timeout="" suivie d'un ou plusieurs chiffres. Le temps d'attente est capturé dans un groupe de capture.
-                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
-                // type=(\S+)  # Matche la chaîne ""type="" suivie d'un ou plusieurs caractères non-blancs. Le type est capturé dans un groupe de capture.
-                // .?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
-                // offset=(-?\d+)  # Matche la chaîne ""offset="" suivie d'un ou plusieurs chiffres, éventuellement précédé d'un signe ""-"". L'offset est capturé dans un groupe de capture.
-                // .*?         # Matche n'importe quel caractère (y compris les retours à la ligne) de manière non-greedy jusqu'à ce que la suite soit trouvée.
-                // (?:</td>|$)  # Matche soit la balise de fin de cellule ""</td>"", soit la fin de la chaîne ""$"". Le ""?"" dans le groupe de capture signifie que cette partie est optionnelle.
-
-                MatchCollection matchs = Regex.Matches(body, pattern, RegexOptions.Multiline);
+                pattern = @"<td>COM (?<COM>\w+): #ID=(?<NBID>\d+):Range=(?<range>\d+).*?timeout=(?<timeout>\d+).*?type=(?<type>\w+),\s+ID offset=(?<offset>-?\d+)|COM (?<COM2>\d+):\s#ID=(?<NBID2>0):Disable";
+                MatchCollection matchs = Regex.Matches(body, pattern, RegexOptions.Multiline | RegexOptions.Compiled);
                 data.ModbusComPort = new ModbusComPortData[matchs.Count];
                 for (int i = 0; i < matchs.Count; i++)
                 {
@@ -147,8 +134,10 @@ namespace ICPDAS_Manager
                 if (a != null)
                 {
                     ITypeConverter valueConverter = factory.GetInstance(a.Converter);
-                    object? value = valueConverter.Convert(groups.FirstOrDefault(g => g.Name.Substring(0, a.RegexID.Length) == a.RegexID)?.Value);
-                    p.SetValue(data, value);
+                    string? rawValue = groups.FirstOrDefault(g => g.Length > 0 && g.Name.Substring(0, Math.Min(g.Name.Length, a.RegexID.Length)) == a.RegexID)?.Value;
+                    object? value = valueConverter.Convert(rawValue);
+                    if (value != null)
+                        p.SetValue(data, value);
                 }
             }
         }

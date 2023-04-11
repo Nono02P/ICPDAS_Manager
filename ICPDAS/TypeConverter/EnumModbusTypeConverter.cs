@@ -11,7 +11,7 @@
                 case "RTU":
                     return eModbusType.RTU;
                 default:
-                    throw new Exception("Unknow eModbusType data.");
+                    return null;
             }
         }
     }
