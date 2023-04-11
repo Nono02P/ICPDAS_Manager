@@ -65,22 +65,32 @@ namespace ICPDAS_Manager
                 }
                 else
                 {
-                    PhysicalAddress r = GetMacAddress(IPAddress.Parse(ip));
-                    if (r.ToString().Substring(0, 6) == "000DE0")
+                    string mac = GetMacAddress(IPAddress.Parse(ip)).ToString();
+                    if (mac.Substring(0, 6) == "000DE0")
                     {
                         accepted = true;
                     }
                     else
                     {
-                        Console.WriteLine("The MAC address of the specified IP doesn't correspond to a ICP DAS Gateway!");
-                        Console.WriteLine();
-                        Console.WriteLine("Do you want to force and continue anyway? (Y/N)");
-                        if (Console.ReadKey().Key == ConsoleKey.Y)
+                        if (mac == new string('0', 12))
                         {
+                            Console.WriteLine($"There is no device at the IP {ip}!");
+                        }
+                        else
+                        {
+                            string pattern = "^([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})$";
+                            string replacement = "$1-$2-$3-$4-$5-$6";
+                            string macFormated = Regex.Replace(mac, pattern, replacement);
+                            Console.WriteLine($"The MAC address ({macFormated}) of the specified IP doesn't correspond to a ICP DAS Gateway!");
                             Console.WriteLine();
-                            Console.WriteLine($"The file {fileName} will be probably wrong. Are you sure? (Y/N)");
+                            Console.WriteLine("Do you want to force and continue anyway? (Y/N)");
                             if (Console.ReadKey().Key == ConsoleKey.Y)
-                                accepted = true;
+                            {
+                                Console.WriteLine();
+                                Console.WriteLine($"The file {fileName} will be probably wrong. Are you sure? (Y/N)");
+                                if (Console.ReadKey().Key == ConsoleKey.Y)
+                                    accepted = true;
+                            }
                         }
                         Console.WriteLine();
                     }
@@ -113,7 +123,7 @@ namespace ICPDAS_Manager
         {
             const int MacAddressLength = 6;
             int length = MacAddressLength;
-            var macBytes = new byte[MacAddressLength];
+            byte[] macBytes = new byte[MacAddressLength];
             SendARP(BitConverter.ToInt32(ipAddress.GetAddressBytes(), 0), 0, macBytes, ref length);
             return new PhysicalAddress(macBytes);
         }
