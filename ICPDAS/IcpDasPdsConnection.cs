@@ -90,11 +90,11 @@ namespace ICPDAS_Manager
                 TypeConverterFactory factory = new TypeConverterFactory();
 
                 string pattern = @"Gateway ID=(?<gId>\d).*<br>TCP\/UDP port=(?<gPort>[^<]*)";
-                IQueryable<Group> groups = Regex.Match(body, pattern).Groups.AsQueryable<Group>();
+                IQueryable<Group> groups = Regex.Match(body, pattern, RegexOptions.Multiline | RegexOptions.Compiled).Groups.AsQueryable<Group>();
                 PropertyInfo[] properties = typeof(IcpDasPdsData).GetProperties();
                 InsertPropertyData(data, groups, properties, factory);
 
-                pattern = @"<td>COM (?<COM>\w+): #ID=(?<NBID>\d+):Range=(?<range>\d+).*?timeout=(?<timeout>\d+).*?type=(?<type>\w+),\s+ID offset=(?<offset>-?\d+)|COM (?<COM2>\d+):\s#ID=(?<NBID2>0):Disable";
+                pattern = @"<td>COM\s+(?<COM>\d+): #ID=(?<NBID>\d+)(?::Range=(?<range>\d+).*?timeout=(?<timeout>\d+).*?type=(?<type>\w+),\s+ID offset=(?<offset>-?\d+)|:Disable)";
                 MatchCollection matchs = Regex.Matches(body, pattern, RegexOptions.Multiline | RegexOptions.Compiled);
                 data.ModbusComPort = new ModbusComPortData[matchs.Count];
                 for (int i = 0; i < matchs.Count; i++)
@@ -134,7 +134,7 @@ namespace ICPDAS_Manager
                 if (a != null)
                 {
                     ITypeConverter valueConverter = factory.GetInstance(a.Converter);
-                    string? rawValue = groups.FirstOrDefault(g => g.Length > 0 && g.Name.Substring(0, Math.Min(g.Name.Length, a.RegexID.Length)) == a.RegexID)?.Value;
+                    string? rawValue = groups.FirstOrDefault(g => g.Length > 0 && g.Name == a.RegexID)?.Value;
                     object? value = valueConverter.Convert(rawValue);
                     if (value != null)
                         p.SetValue(data, value);
