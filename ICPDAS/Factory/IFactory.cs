@@ -1,6 +1,6 @@
 ﻿namespace ICPDAS_Manager
 {
-    public interface IFactory<T>
+    internal interface IFactory<T>
     {
         T GetInstance(string name);
     }

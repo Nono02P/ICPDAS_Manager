@@ -1,6 +1,6 @@
 ﻿namespace ICPDAS_Manager
 {
-    public class IntTypeConverter : ITypeConverter
+    internal class IntTypeConverter : ITypeConverter
     {
         public object? Convert(string? data)
         {

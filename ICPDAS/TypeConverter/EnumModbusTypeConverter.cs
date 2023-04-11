@@ -1,6 +1,6 @@
 ﻿namespace ICPDAS_Manager
 {
-    public class EnumModbusTypeConverter : ITypeConverter
+    internal class EnumModbusTypeConverter : ITypeConverter
     {
         public object? Convert(string? data)
         {

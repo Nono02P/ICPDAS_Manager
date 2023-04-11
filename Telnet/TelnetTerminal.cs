@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Telnet
 {
-    public class TelnetTerminal : IDisposable
+    internal class TelnetTerminal : IDisposable
     {
         private TcpClient _client;
         private int _timeOutMs;

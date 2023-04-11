@@ -2,7 +2,7 @@
 
 namespace ICPDAS_Manager
 {
-    public static class WebRequests
+    internal static class WebRequests
     {
         public static async Task<HttpWebResponse?> PostAsync(string url, string contentType, string accept, string? content = null, string? referer = null)
         {
@@ -30,7 +30,7 @@ namespace ICPDAS_Manager
             }
         }
 
-        public static async Task<HttpWebResponse> GetAsync(string url, Action<HttpWebRequest> configureRequest = null)
+        public static async Task<HttpWebResponse> GetAsync(string url, Action<HttpWebRequest>? configureRequest = null)
         {
             HttpWebRequest request = WebRequest.CreateHttp(url);
             request.Method = HttpMethod.Get.ToString();

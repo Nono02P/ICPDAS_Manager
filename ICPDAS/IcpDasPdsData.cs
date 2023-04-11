@@ -5,7 +5,7 @@ namespace ICPDAS_Manager
     /// <summary>
     /// Configuration data of ICP DAS PDS
     /// </summary>
-    public class IcpDasPdsData
+    internal class IcpDasPdsData
     {
         #region Telnet
         #region Read Only
@@ -88,7 +88,7 @@ namespace ICPDAS_Manager
         [IcpDasHttpCommand(Key = "M_PORT", RegexID = "gPort")]
         public int ModbusPort { get; set; }
 
-        public ModbusComPortData[] ModbusComPort { get; set; }
+        public ModbusComPortData[]? ModbusComPort { get; set; }
         #endregion
     }
 }

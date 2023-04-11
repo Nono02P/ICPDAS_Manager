@@ -1,6 +1,6 @@
 ﻿namespace Telnet
 {
-    public enum eTelnetCommand : byte
+    internal enum eTelnetCommand : byte
     {
         SE = 240,
         NOP = 241,

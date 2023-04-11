@@ -9,7 +9,7 @@ namespace ICPDAS_Manager
     /// <summary>
     /// Provides a way to connect on the ICP DAS PDS and read / write a configuration.
     /// </summary>
-    public class IcpDasPdsConnection : IDisposable
+    internal class IcpDasPdsConnection : IDisposable
     {
         private TelnetTerminal _telnetTerminal;
         private string _hostname;
@@ -208,7 +208,7 @@ namespace ICPDAS_Manager
             string accept = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7";
             string referer = $"{url}?ID=11661";
 
-            for (int i = 0; i < config.ModbusComPort.Length; i++)
+            for (int i = 0; i < config.ModbusComPort?.Length; i++)
             {
                 StringBuilder sb = new StringBuilder();
                 ModbusComPortData modbusPort = config.ModbusComPort[i];

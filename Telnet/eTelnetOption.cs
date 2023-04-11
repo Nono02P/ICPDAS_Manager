@@ -1,6 +1,6 @@
 ﻿namespace Telnet
 {
-    public enum eTelnetOption : byte
+    internal enum eTelnetOption : byte
     {
         TransmitBinary = 0,
         Echo = 1,

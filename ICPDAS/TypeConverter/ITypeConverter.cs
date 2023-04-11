@@ -1,6 +1,6 @@
 ﻿namespace ICPDAS_Manager
 {
-    public interface ITypeConverter
+    internal interface ITypeConverter
     {
         object? Convert(string? data);
     }

@@ -1,6 +1,6 @@
 ﻿namespace ICPDAS_Manager
 {
-    public class ModbusComPortData
+    internal class ModbusComPortData
     {
         [IcpDasHttpCommand(Key = "COM", RegexID = "COM")]
         public int ComPortId { get; set; }

@@ -1,6 +1,6 @@
 ﻿namespace ICPDAS_Manager
 {
-    public class TypeConverterFactory : IFactory<ITypeConverter>
+    internal class TypeConverterFactory : IFactory<ITypeConverter>
     {
         private IntTypeConverter? _intConverter;
         private EnumModbusTypeConverter? _enumConverter;
