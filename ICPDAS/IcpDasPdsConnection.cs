@@ -154,6 +154,7 @@ namespace ICPDAS_Manager
         {
             WriteDataToTelnet(config);
             WriteDataToHttp(config);
+            WriteIpFilters(config);
 
             if (restart)
             {
@@ -193,6 +194,41 @@ namespace ICPDAS_Manager
                 }
             }
             Console.WriteLine(_telnetTerminal.Read());
+        }
+
+        /// <summary>
+        /// Writes the IP Filters from configuration to the device by using Telnet.
+        /// </summary>
+        /// <param name="config">The configuration to write.</param>
+        private void WriteIpFilters(IcpDasPdsData config)
+        {
+            _telnetTerminal.Write("IPFILTER DEL @");
+
+            string pattern = @"IP filter #\d:.*?(?<ip1>(?:\d{1,3}\.){3}\d{1,3}).*?(?<ip2>(?:\d{1,3}\.){3}\d{1,3})?\r\n";
+
+            if (config.IpFilter != null)
+            {
+                MatchCollection matches = Regex.Matches(config.IpFilter, pattern, RegexOptions.Multiline | RegexOptions.Compiled);
+
+                for (int i = 0; i < matches.Count; i++)
+                {
+                    Match match = matches[i];
+                    IQueryable<Group> groups = match.Groups.AsQueryable<Group>();
+                    string? ip1 = groups.FirstOrDefault(g => g.Length > 0 && g.Name == "ip1")?.Value;
+                    string? ip2 = groups.FirstOrDefault(g => g.Length > 0 && g.Name == "ip2")?.Value;
+                    if (ip1 != null)
+                    {
+                        string command = $"IPFILTER ADD {ip1}";
+                        if (ip2 != null)
+                        {
+                            command += $" {ip2}";
+                        }
+                        _telnetTerminal.Write(command);
+                    }
+                }
+                _telnetTerminal.Write("IPFILTER SAVE");
+                Console.WriteLine(_telnetTerminal.Read());
+            }
         }
         #endregion
 

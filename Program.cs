@@ -1,5 +1,4 @@
-﻿using System.Net.NetworkInformation;
-using System.Net;
+﻿using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -9,6 +8,38 @@ namespace ICPDAS_Manager
     {
         [STAThread]
         static void Main(string[] args)
+        {
+            eCommand command = RequestCommand();
+            string? fileName = RequestFileName(command);
+            if (fileName == null)
+                return;
+
+            string ip = RequestIp(fileName);
+
+            Task.Run(() =>
+            {
+                switch (command)
+                {
+                    case eCommand.None:
+                        break;
+                    case eCommand.Read:
+                        Read(fileName, ip);
+                        Console.WriteLine("Reading configuration end");
+                        break;
+                    case eCommand.Write:
+                        Write(fileName, ip);
+                        Console.WriteLine("Writing configuration end");
+                        break;
+                    default:
+                        break;
+                }
+            }).Wait();
+            Console.WriteLine("Press any key to close...");
+            Console.ReadKey();
+        }
+
+        #region Request to user
+        private static eCommand RequestCommand()
         {
             eCommand command = eCommand.None;
             do
@@ -29,8 +60,12 @@ namespace ICPDAS_Manager
                         break;
                 }
             } while (command == eCommand.None);
+            return command;
+        }
 
-            string fileName = string.Empty;
+        private static string? RequestFileName(eCommand command)
+        {
+            string? fileName = null;
             FileDialog? fileDialog;
             switch (command)
             {
@@ -49,9 +84,11 @@ namespace ICPDAS_Manager
             {
                 fileName = fileDialog.FileName;
             }
-            else
-                return;
+            return fileName;
+        }
 
+        private static string RequestIp(string fileName)
+        {
             bool accepted = false;
             string? ip;
             string ipPattern = @"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
@@ -65,7 +102,7 @@ namespace ICPDAS_Manager
                 }
                 else
                 {
-                    string mac = GetMacAddress(IPAddress.Parse(ip)).ToString();
+                    string mac = NetworkHelper.GetMacAddress(IPAddress.Parse(ip)).ToString();
                     if (mac.Substring(0, 6) == "000DE0")
                     {
                         accepted = true;
@@ -96,38 +133,11 @@ namespace ICPDAS_Manager
                     }
                 }
             } while (!accepted);
+            return ip;
+        } 
+        #endregion
 
-            Task.Run(() =>
-            {
-                switch (command)
-                {
-                    case eCommand.None:
-                        break;
-                    case eCommand.Read:
-                        Read(fileName, ip);
-                        Console.WriteLine("Reading configuration end");
-                        break;
-                    case eCommand.Write:
-                        Write(fileName, ip);
-                        Console.WriteLine("Writing configuration end");
-                        break;
-                    default:
-                        break;
-                }
-            }).Wait();
-        }
-
-        [System.Runtime.InteropServices.DllImport("iphlpapi.dll", ExactSpelling = true)]
-        static extern int SendARP(int DestIP, int SrcIP, byte[] pMacAddr, ref int PhyAddrLen);
-        public static PhysicalAddress GetMacAddress(IPAddress ipAddress)
-        {
-            const int MacAddressLength = 6;
-            int length = MacAddressLength;
-            byte[] macBytes = new byte[MacAddressLength];
-            SendARP(BitConverter.ToInt32(ipAddress.GetAddressBytes(), 0), 0, macBytes, ref length);
-            return new PhysicalAddress(macBytes);
-        }
-
+        #region Read / Write
         static void Read(string fileName, string hostname)
         {
             IcpDasPdsConnection pdsConnection = new IcpDasPdsConnection(hostname);
@@ -172,6 +182,7 @@ namespace ICPDAS_Manager
                     pdsConnection.Dispose();
                 }
             }
-        }
+        } 
+        #endregion
     }
 }
