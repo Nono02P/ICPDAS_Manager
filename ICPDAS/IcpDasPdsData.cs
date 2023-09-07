@@ -34,7 +34,7 @@ namespace ICPDAS_Manager
                     _comPorts = value;
                 else
                 {
-                    string pattern = @"\. connect=\d\r\n";
+                    string pattern = @"\. connect=\d(?::Socket \d*,)?\r\n";
                     _comPorts = Regex.Replace(value, pattern, @"\r\n", RegexOptions.Multiline);
                 }
             }
